@@ -23,12 +23,3 @@ This system is designed for instant edge deployment.
 ## Technical Constraints
 * **Cold Start:** The initial load requires fetching the PyScript WebAssembly engine. Subsequent loads are cached and instantaneous.
 * **Protocol Targeting:** Validates against HTTP/HTTPS structures to prevent malformed code execution.
-
----
-*Built by [Manthan](https://manthank.me) - Engineered for zero maintenance and maximum independence.*
-"""
-
-with open("README.md", "w") as f:
-    f.write(readme_content)
-
-print("File generated successfully.")

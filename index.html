@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Permanent QR Generator</title>
+    
+    <!-- Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PyScript Engine: This is what allows Python to run in the browser without a server -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+    <!-- Tell the Python engine which tools to download -->
+    <py-config>
+        packages = ["qrcode", "pillow"]
+    </py-config>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center p-6">
+
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700">
+        <h1 class="text-2xl font-bold mb-2 text-white">Menu QR Generator (Python Edition)</h1>
+        <p class="text-gray-400 text-sm mb-6">Powered entirely by Python in your browser. No server overhead.</p>
+
+        <!-- Loading indicator for the Python engine -->
+        <div id="loading" class="text-yellow-400 text-sm mb-4 font-semibold animate-pulse">
+            Loading Python engine... Please wait a few seconds.
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Paste Image or Google Photos URL</label>
+            <input type="text" id="urlInput" placeholder="https://photos.app.goo.gl/..." 
+                class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 outline-none transition">
+        </div>
+
+        <div id="errorPanel" class="hidden mb-6 p-4 bg-red-900 border border-red-700 text-red-200 rounded-xl text-sm">
+            <span class="font-semibold">Error:</span> <span id="errorMessage"></span>
+        </div>
+
+        <!-- The 'py-click' attribute links this button to our Python function -->
+        <button id="generateBtn" py-click="generate_qr" disabled class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition transform active:scale-95 mb-6 opacity-50 cursor-not-allowed">
+            Generate QR Code
+        </button>
+
+        <div id="outputSection" class="hidden flex flex-col items-center border-t border-gray-700 pt-6">
+            <div class="bg-white p-4 rounded-xl mb-6 shadow-inner">
+                <img id="qrImage" src="" alt="QR Code" class="w-48 h-48">
+            </div>
+            <a id="downloadBtn" href="" download="menu_qr.png" class="w-full text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition transform active:scale-95">
+                Download QR Code Image
+            </a>
+        </div>
+    </div>
+
+    <!-- Here is your actual Python code, living directly inside the website -->
+    <py-script>
+import qrcode
+import io
+import base64
+from pyscript import document
+from pyscript import window
+
+# Turn on the button once Python is fully loaded
+document.getElementById("loading").style.display = "none"
+btn = document.getElementById("generateBtn")
+btn.disabled = False
+btn.classList.remove("opacity-50", "cursor-not-allowed")
+
+def generate_qr(event):
+    url = document.getElementById("urlInput").value.strip()
+    error_panel = document.getElementById("errorPanel")
+    error_msg = document.getElementById("errorMessage")
+    output_section = document.getElementById("outputSection")
+    img_element = document.getElementById("qrImage")
+    download_btn = document.getElementById("downloadBtn")
+
+    # Reset visuals
+    error_panel.classList.add("hidden")
+    output_section.classList.add("hidden")
+
+    # Simple checks
+    if not url:
+        error_msg.innerText = "The URL field cannot be empty."
+        error_panel.classList.remove("hidden")
+        return
+
+    if not (url.startswith("http://") or url.startswith("https://")):
+        error_msg.innerText = "The URL must start with http:// or https://"
+        error_panel.classList.remove("hidden")
+        return
+
+    try:
+        # Create the QR code layout
+        qr = qrcode.QRCode(
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(url)
+        qr.make(fit=True)
+
+        # Draw the image
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Convert the image to raw memory data so the website can read it
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        image_data = buf.getvalue()
+
+        # Translate raw memory into a web link format (base64)
+        encoded_string = base64.b64encode(image_data).decode('utf-8')
+        image_source = f"data:image/png;base64,{encoded_string}"
+
+        # Generate a safe, unique filename based on the URL
+        safe_name = "".join(c if c.isalnum() else "_" for c in url.split("://")[-1])
+        safe_filename = f"{safe_name[:50]}_qr.png"
+
+        # Push the image to the screen
+        img_element.src = image_source
+        download_btn.href = image_source
+        download_btn.download = safe_filename
+        
+        output_section.classList.remove("hidden")
+
+    except Exception as e:
+        error_msg.innerText = "Something broke while drawing the QR code."
+        error_panel.classList.remove("hidden")
+        print(f"Error details: {e}")
+    </py-script>
+
+</body>
+</html>

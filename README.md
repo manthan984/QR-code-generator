@@ -1,5 +1,3 @@
-readme_content = """# Serverless Python QR Engine
-
 A zero-overhead, entirely client-side QR code generator utilizing PyScript to execute Python natively in the browser. 
 
 ## Architecture
